@@ -277,12 +277,22 @@ const smallBtn = {
   display: "inline-block"
 };
 
-export default function CoursEditor({ user, onBack }) {
-  const [titre, setTitre] = useState("");
-  const [niveau, setNiveau] = useState("6e");
-  const [matiere, setMatiere] = useState("Mathématiques");
-  const [chapitreNom, setChapitreNom] = useState("");
-  const [blocks, setBlocks] = useState([{ id: 1, type: "texte", content: "", titre: "" }]);
+export default function CoursEditor({ user, onBack, coursExistant }) {
+  // On charge les données du cours existant s'il y en a un, sinon on met les valeurs par défaut
+  const [titre, setTitre] = useState(coursExistant?.titre || "");
+  const [niveau, setNiveau] = useState(coursExistant?.niveau || "3e");
+  const [matiere, setMatiere] = useState(coursExistant?.matiere || "Mathématiques");
+  const [chapitreNom, setChapitreNom] = useState(""); // On garde le state pour l'UI, mais on ne le sauvegarde pas en BDD pour l'instant
+  
+  // On essaie de lire le JSON sauvegardé, sinon on crée un bloc texte vide
+  const [blocks, setBlocks] = useState(() => {
+    if (coursExistant?.contenu) {
+      try { return JSON.parse(coursExistant.contenu); } 
+      catch (e) { return [{ id: 1, type: "texte", content: coursExistant.contenu, titre: "" }]; }
+    }
+    return [{ id: 1, type: "texte", content: "", titre: "" }];
+  });
+
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [preview, setPreview] = useState(false);
@@ -316,16 +326,38 @@ export default function CoursEditor({ user, onBack }) {
   const saveCours = async (publie = false) => {
     if (!titre) return;
     setSaving(true);
-    await supabase.from("cours").insert({
-      titre, niveau, matiere,
-      chapitre: chapitreNom,
+
+    // On prépare exactement les données que Supabase attend
+    const donnees = {
+      titre, 
+      niveau, 
+      matiere,
       contenu: JSON.stringify(blocks),
-      publie,
-      auteur_id: user.id
-    });
+      publie
+    };
+
+    let error;
+
+    // Si on modifie un cours existant (Brouillon cliqué) -> UPDATE
+    if (coursExistant && coursExistant.id) {
+      const res = await supabase.from("cours").update(donnees).eq("id", coursExistant.id);
+      error = res.error;
+    } 
+    // Si c'est un tout nouveau cours -> INSERT
+    else {
+      const res = await supabase.from("cours").insert(donnees);
+      error = res.error;
+    }
+
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+
+    if (error) {
+      console.error("Erreur détaillée:", error);
+      alert("Erreur lors de la sauvegarde : " + error.message);
+    } else {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    }
   };
 
   return (

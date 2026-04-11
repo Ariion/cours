@@ -13,6 +13,7 @@ export default function App() {
   const [eleveData, setEleveData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adminView, setAdminView] = useState("dashboard"); // dashboard | editor
+  const [coursAEditer, setCoursAEditer] = useState(null);
 
   useEffect(() => {
     // Récupérer la session actuelle
@@ -79,13 +80,25 @@ export default function App() {
   // Vue admin
   if (user.email === ADMIN_EMAIL) {
     if (adminView === "editor") {
-      return <CoursEditor user={user} onBack={() => setAdminView("dashboard")} />;
+      return (
+        <CoursEditor 
+          user={user} 
+          coursExistant={coursAEditer} /* On passe les données du cours à l'éditeur */
+          onBack={() => {
+            setAdminView("dashboard");
+            setCoursAEditer(null); /* On vide la mémoire en quittant l'éditeur */
+          }} 
+        />
+      );
     }
     return (
       <Admin
         user={user}
         onLogout={handleLogout}
-        onOpenEditor={() => setAdminView("editor")}
+        onOpenEditor={(cours) => {
+          setCoursAEditer(cours || null); /* On mémorise le cours (ou null si nouveau) */
+          setAdminView("editor");
+        }}
       />
     );
   }
