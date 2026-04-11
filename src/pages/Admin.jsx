@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 const MATIERES = ["Mathématiques", "Physique-Chimie", "Français", "Histoire-Géo", "Anglais"];
 const NIVEAUX = ["6e", "5e", "4e", "3e", "2nde", "1re", "Terminale"];
 
-export default function Admin({ user, onLogout }) {
+export default function Admin({ user, onLogout, onOpenEditor }) {
   const [tab, setTab] = useState("eleves");
   const [eleves, setEleves] = useState([]);
   const [cours, setCours] = useState([]);
