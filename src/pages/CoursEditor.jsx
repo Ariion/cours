@@ -106,71 +106,29 @@ const BLOCK_STYLES = {
 };
 
 // ─── Prompt système envoyé à Claude ──────────────────────────────────────────
-const SYSTEM_PROMPT = `Tu es un professeur de mathématiques expert du programme français (collège et lycée).
-Tu génères des cours complets, rigoureux et pédagogiques au format JSON.
-
-RÈGLES ABSOLUES :
-- Réponds UNIQUEMENT avec un tableau JSON valide, aucun texte avant ou après.
-- Chaque bloc a : { "id": number, "type": string, "content": string, "titre": string|undefined }
-- Types disponibles : "texte", "formule", "definition", "theoreme", "exemple", "remarque", "methode"
-- Pour "definition", "theoreme", "exemple", "methode", "remarque" : inclure "titre" (string)
-- Pour "texte" et "formule" : PAS de champ "titre"
-- Les formules mathématiques dans "texte" s'écrivent $formule$ (inline)
-- Les blocs "formule" contiennent du LaTeX pur (sans $), ex: \\frac{-b+\\sqrt{\\Delta}}{2a}
-- Utilise \\times pour ×, \\leq pour ≤, \\geq pour ≥, \\sqrt{} pour √, \\frac{}{} pour les fractions
-- Sois exhaustif : définitions, théorèmes, formules clés, méthodes, exemples résolus étape par étape
-- Minimum 12 blocs, idéalement 18-25 blocs pour un cours complet
-- Les exemples doivent montrer des calculs détaillés pas à pas dans le contenu`;
-
-// ─── Fonction de génération IA ───────────────────────────────────────────────
+// Generation IA via proxy Vercel (sans appel direct a l'API Anthropic)
 async function genererCoursIA(niveau, matiere, chapitre, onProgress) {
-  onProgress("Connexion à l'IA...");
+  onProgress("Connexion a l'IA...");
 
-  const userPrompt = `Génère un cours complet de ${matiere} pour la classe de ${niveau}, chapitre : "${chapitre}".
-  
-Inclus dans l'ordre :
-1. Une introduction (bloc texte)
-2. Les définitions essentielles
-3. Les théorèmes/propriétés avec leurs formules (blocs formule séparés)
-4. Les méthodes de résolution étape par étape
-5. Plusieurs exemples résolus complètement
-6. Des remarques importantes et cas particuliers
-
-Réponds uniquement avec le tableau JSON.`;
-
-  onProgress("Génération en cours...");
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("/api/generate-cours", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }]
-    })
+    body: JSON.stringify({ niveau, matiere, chapitre })
   });
 
-  if (!response.ok) throw new Error(`Erreur API : ${response.status}`);
+  onProgress("Generation en cours...");
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(err.error || "Erreur " + response.status);
+  }
 
   const data = await response.json();
-  const text = data.content?.map(b => b.text || "").join("") || "";
+  onProgress("Mise en forme des blocs...");
 
-  onProgress("Analyse de la réponse...");
+  const blocs = data.blocs;
+  if (!Array.isArray(blocs)) throw new Error("Format de reponse invalide");
 
-  // Nettoyage robuste du JSON
-  const clean = text
-    .replace(/```json\s*/gi, "")
-    .replace(/```\s*/g, "")
-    .trim();
-
-  // Extraire le tableau JSON
-  const match = clean.match(/\[[\s\S]*\]/);
-  if (!match) throw new Error("Format de réponse invalide");
-
-  const blocs = JSON.parse(match[0]);
-
-  // Validation et nettoyage des blocs
   return blocs.map((b, i) => ({
     id: Date.now() + i,
     type: BLOCK_TYPES.map(t => t.key).includes(b.type) ? b.type : "texte",
