@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { CorrectionPanel } from "../components/CorrectionPanel"; // L'import est remonté ICI !
 
 const MATIERES = ["Mathématiques", "Physique-Chimie", "Français", "Histoire-Géo", "Anglais"];
 const NIVEAUX = ["6e", "5e", "4e", "3e", "2nde", "1re", "Terminale"];
@@ -215,25 +216,23 @@ export default function Admin({ user, onLogout, onOpenEditor }) {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-
+                    <span style={{
+                      fontSize: 11, padding: "4px 12px", borderRadius: 20,
+                      background: c.publie ? "#f0fae8" : "#fff8e6",
+                      color: c.publie ? "#3a7d0a" : "#b86f00", fontWeight: 600
+                    }}>{c.publie ? "Publié" : "Brouillon"}</span>
                     
-  <span style={{
-    fontSize: 11, padding: "4px 12px", borderRadius: 20,
-    background: c.publie ? "#f0fae8" : "#fff8e6",
-    color: c.publie ? "#3a7d0a" : "#b86f00", fontWeight: 600
-  }}>{c.publie ? "Publié" : "Brouillon"}</span>
-  
-  {/* NOUVEAU BOUTON ÉDITER */}
-  <button onClick={() => onOpenEditor(c)} style={{
-    padding: "6px 12px", borderRadius: 8, border: "1px solid #cce0ff",
-    background: "#eef5ff", color: "#1a56db", fontSize: 12, cursor: "pointer"
-  }}>Éditer</button>
+                    {/* BOUTON ÉDITER */}
+                    <button onClick={() => onOpenEditor(c)} style={{
+                      padding: "6px 12px", borderRadius: 8, border: "1px solid #cce0ff",
+                      background: "#eef5ff", color: "#1a56db", fontSize: 12, cursor: "pointer"
+                    }}>Éditer</button>
 
-  <button onClick={() => supprimerCours(c.id)} style={{
-    padding: "6px 12px", borderRadius: 8, border: "1px solid #fdd",
-    background: "#fff5f5", color: "#d93025", fontSize: 12, cursor: "pointer"
-  }}>Supprimer</button>
-</div>
+                    <button onClick={() => supprimerCours(c.id)} style={{
+                      padding: "6px 12px", borderRadius: 8, border: "1px solid #fdd",
+                      background: "#fff5f5", color: "#d93025", fontSize: 12, cursor: "pointer"
+                    }}>Supprimer</button>
+                  </div>
                 </div>
               ))}
               {cours.length === 0 && !loading && (
@@ -323,10 +322,15 @@ export default function Admin({ user, onLogout, onOpenEditor }) {
             </button>
           </div>
         )}
+
+        {/* ONGLET CORRECTIONS */}
+        {tab === "corrections" && (
+          <div>
+            <CorrectionPanel />
+          </div>
+        )}
+
       </div>
-      import { CorrectionPanel } from "../components/CorrectionPanel";
-// ...
-{tab === "corrections" && <CorrectionPanel />}
     </div>
   );
 }
