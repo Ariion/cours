@@ -85,6 +85,7 @@ export default function Admin({ user, onLogout, onOpenEditor }) {
     { key: "eleves", label: "Élèves", icon: "👤" },
     { key: "cours", label: "Cours", icon: "📖" },
     { key: "ajouter", label: "+ Nouvel élève", icon: "➕" },
+    { key: "corrections", label: "Corrections", icon: "✅" },
   ];
 
   return (
@@ -214,6 +215,8 @@ export default function Admin({ user, onLogout, onOpenEditor }) {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
+
+                    
   <span style={{
     fontSize: 11, padding: "4px 12px", borderRadius: 20,
     background: c.publie ? "#f0fae8" : "#fff8e6",
@@ -321,6 +324,9 @@ export default function Admin({ user, onLogout, onOpenEditor }) {
           </div>
         )}
       </div>
+      import { CorrectionPanel } from "../components/CorrectionPanel";
+// ...
+{tab === "corrections" && <CorrectionPanel />}
     </div>
   );
 }
