@@ -360,4 +360,4 @@ export default function Admin({ user, onLogout, onOpenEditor }) {
       </div>
     </div>
   );
-}
+} 
