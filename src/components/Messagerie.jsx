@@ -88,6 +88,13 @@ export default function Messagerie({ eleveId, eleveNom, asAdmin = false, titre }
       setMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]);
       setTexte("");
       retirerFichier();
+      if (moi === "eleve") {
+        fetch("/api/notify-message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ eleveNom: eleveNom || "Un élève", contenu: contenu || null, hasImage: !!image_url }),
+        }).catch(() => {});
+      }
     } catch (e) {
       setSendError("Échec de l'envoi : " + (e.message || "erreur inconnue"));
     }
