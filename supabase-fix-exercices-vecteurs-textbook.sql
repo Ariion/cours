@@ -1,0 +1,10 @@
+-- ============================================
+-- FIX — aligne les exercices "Vecteurs dans le plan" sur les enonces
+-- adaptes du vrai cahier d'exercices (memes valeurs que l'Atelier
+-- vecteurs interactif), pour que la correction automatique et
+-- l'atelier restent coherents entre eux.
+-- A coller dans : Supabase > SQL Editor > New query
+-- ============================================
+
+UPDATE exercices SET questions = $vfix$[{"id": "v1", "type": "calcul", "difficulte": 1, "enonce": "A(1 ; 2) et B(4 ; 6). Donne les coordonnées de $\\overrightarrow{AB}$.", "indices": ["Arrivée moins départ : (x_B − x_A ; y_B − y_A)."], "verif": {"nombres": [3, 4], "mode": "ordre"}}, {"id": "v2", "type": "calcul", "difficulte": 1, "enonce": "Un vecteur a pour coordonnées (6 ; 8). Calcule sa norme.", "indices": ["$\\|\\vec{u}\\| = \\sqrt{x^2+y^2}$", "Le résultat est un nombre entier — pense au triangle 3-4-5."], "verif": {"nombres": [10], "mode": "ordre"}}, {"id": "v3", "type": "calcul", "difficulte": 2, "enonce": "A(5 ; −1) et B(−3 ; 3). Donne les coordonnées du milieu de [AB].", "indices": ["Fais la moyenne de chaque coordonnée séparément."], "verif": {"nombres": [1, 1], "mode": "ordre"}}, {"id": "v4", "type": "calcul", "difficulte": 2, "enonce": "C(−3 ; −3) et D(2 ; 1). Donne les coordonnées de $\\overrightarrow{CD}$.", "indices": ["Arrivée moins départ : x_D − x_C = 2 − (−3)."], "verif": {"nombres": [5, 4], "mode": "ordre"}}, {"id": "v5", "type": "redaction", "difficulte": 3, "enonce": "$\\vec{u}$ a pour coordonnées (−2 ; 3) et $\\vec{v}$ (4 ; −6). Ces deux vecteurs sont-ils colinéaires ? Justifie.", "indices": ["det(u, v) = xy′ − x′y.", "Nul ⟺ colinéaires."]}, {"id": "v6", "type": "redaction", "difficulte": 3, "enonce": "A(−2 ; 1), B(3 ; 4), C(2 ; 2), D(5 ; 4). Les droites (AB) et (CD) sont-elles parallèles ? Justifie à l'aide d'un déterminant.", "indices": ["Calcule d'abord $\\overrightarrow{AB}$ et $\\overrightarrow{CD}$.", "det(u, v) = xy′ − x′y ; nul si et seulement si les vecteurs sont colinéaires."]}]$vfix$
+WHERE niveau = '2nde' AND chapitre = 'Vecteurs dans le plan';
