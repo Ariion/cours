@@ -31,10 +31,58 @@ export function CorrectionPanel() {
   const loadSoumissions = async () => {
     const { data } = await supabase
       .from("soumissions")
-      .select("*, exercices(titre, chapitre, niveau)")
+      .select("*, exercices(titre, chapitre, niveau, questions)")
       .order("created_at", { ascending: false });
     setSoumissions(data || []);
     setLoading(false);
+  };
+
+  // ── Correction automatique ───────────────────────────────────────────────
+  // Ne corrige que les questions qui portent un "verif" (nombres attendus) —
+  // les questions de rédaction/justification restent à la charge du prof,
+  // aucune correction automatique ne juge une explication écrite.
+  const extraireNombres = (texte) =>
+    ((texte || "").match(/-?\d+(?:[.,]\d+)?/g) || []).map(s => parseFloat(s.replace(",", ".")));
+
+  const reponseCorrecte = (reponseEleve, verif) => {
+    if (!verif || !Array.isArray(verif.nombres) || verif.nombres.length === 0) return null; // pas auto-corrigeable
+    const trouves = extraireNombres(reponseEleve);
+    if (trouves.length === 0) return false;
+    if (verif.mode === "ensemble") {
+      return verif.nombres.every(n => trouves.some(t => Math.abs(t - n) < 0.01));
+    }
+    // mode "ordre" : les nombres attendus doivent apparaître, dans l'ordre, parmi ceux trouvés
+    let idx = 0;
+    for (const t of trouves) {
+      if (Math.abs(t - verif.nombres[idx]) < 0.01) idx++;
+      if (idx === verif.nombres.length) return true;
+    }
+    return false;
+  };
+
+  const corrigerAutomatiquement = () => {
+    const questionsDef = selected?.exercices?.questions || [];
+    let nbCorrigees = 0, nbRestantes = 0, sommePoints = 0;
+    const nextNotes = { ...notes };
+    const nextCommentaires = { ...commentaires };
+    (selected.reponses || []).forEach(r => {
+      if (nextNotes[r.question_id]) { sommePoints += Number(nextNotes[r.question_id]) || 0; return; } // déjà noté, on n'écrase pas
+      const def = questionsDef.find(q => q.id === r.question_id);
+      const correct = reponseCorrecte(r.reponse_eleve, def?.verif);
+      if (correct === null) { nbRestantes++; return; } // pas de verif : à corriger à la main
+      if (correct) {
+        nextNotes[r.question_id] = "4";
+        nextCommentaires[r.question_id] = nextCommentaires[r.question_id] || "Bravo, c'est exact !";
+        sommePoints += 4;
+        nbCorrigees++;
+      } else {
+        nbRestantes++; // on ne pénalise pas automatiquement une réponse non reconnue, on laisse au prof le soin de juger
+      }
+    });
+    setNotes(nextNotes);
+    setCommentaires(nextCommentaires);
+    if (!noteGlobale) setNoteGlobale(String(Math.min(20, sommePoints)));
+    alert(`✓ ${nbCorrigees} question${nbCorrigees > 1 ? "s" : ""} corrigée${nbCorrigees > 1 ? "s" : ""} automatiquement.\n${nbRestantes} à vérifier à la main (réponse non reconnue ou question de rédaction).`);
   };
 
   const openCorrection = (s) => {
@@ -102,6 +150,16 @@ export function CorrectionPanel() {
           rows={3}
           style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 14, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box" }}
         />
+      </div>
+
+      {/* Correction automatique */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+        <button onClick={corrigerAutomatiquement} style={{
+          background: "#f5f3ff", color: "#6d28d9", border: "1.5px solid #ddd6fe", borderRadius: 10,
+          padding: "10px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit"
+        }}>
+          ✨ Corriger automatiquement
+        </button>
       </div>
 
       {/* Questions */}
