@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import CoursView from "../components/CoursView";
 import ExerciceView from "../components/ExerciceView";
-import EnvoiPhoto from "../components/EnvoiPhoto";
 import Messagerie from "../components/Messagerie";
 
 // ── Thèmes par niveau ──────────────────────────────────────────────────────────
@@ -314,7 +313,6 @@ export default function EleveHome({ user, eleveData, onLogout }) {
           {[
             { key: "cours", label: "📖 Cours", count: cours.length },
             { key: "exercices", label: "✏️ Exercices", count: exercices.length },
-            { key: "envoyer", label: "📸 Envoyer", count: null },
             { key: "messages", label: "💬 Messages", count: unreadMsgs || null, alert: unreadMsgs > 0 },
           ].map(t => (
             <div key={t.key} onClick={() => { setTab(t.key); if (t.key === "messages") setUnreadMsgs(0); }}
@@ -329,11 +327,7 @@ export default function EleveHome({ user, eleveData, onLogout }) {
       </div>
 
       {/* Contenu */}
-      {tab === "envoyer" ? (
-        <div className="eh-pad" style={{ maxWidth: 1000, margin: "0 auto", padding: "28px 32px 80px" }}>
-          <EnvoiPhoto eleve={{ id: user.id, nom: eleveNom, email: user.email }} />
-        </div>
-      ) : tab === "messages" ? (
+      {tab === "messages" ? (
         <div className="eh-pad" style={{ maxWidth: 700, margin: "0 auto", padding: "28px 32px 80px" }}>
           <div style={{ background: "#fff", border: "1px solid #e0e8f7", borderRadius: 16, height: "65vh", minHeight: 420, overflow: "hidden" }}>
             <Messagerie eleveId={user.id} eleveNom={eleveNom} asAdmin={false} />
