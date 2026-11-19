@@ -194,10 +194,17 @@ export default function ExerciceView({ exercice, eleve, onBack }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "#fafbff", fontFamily: "DM Sans, sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap'); *{box-sizing:border-box}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap'); *{box-sizing:border-box}
+        @media (max-width: 600px) {
+          .ev-nav { padding: 12px 16px !important; }
+          .ev-content { padding: 28px 16px 160px !important; }
+          .ev-bar { padding: 12px 16px !important; flex-wrap: wrap; gap: 10px !important; }
+          .ev-bar > div:first-child { flex: 1 1 100%; }
+        }
+      `}</style>
 
       {/* Nav */}
-      <div style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(10px)", borderBottom: "1px solid #f1f5f9", padding: "13px 36px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
+      <div className="ev-nav" style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(10px)", borderBottom: "1px solid #f1f5f9", padding: "13px 36px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
         <button onClick={onBack} style={{ fontSize: 13, color: "#64748b", background: "#f1f5f9", border: "none", borderRadius: 8, padding: "7px 16px", cursor: "pointer", fontWeight: 600 }}>← Retour</button>
         {/* Progression */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -210,7 +217,7 @@ export default function ExerciceView({ exercice, eleve, onBack }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "48px 32px 140px" }}>
+      <div className="ev-content" style={{ maxWidth: 760, margin: "0 auto", padding: "48px 32px 140px" }}>
         {/* Hero */}
         <div style={{ marginBottom: 36 }}>
           <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{exercice.chapitre}</div>
@@ -237,7 +244,7 @@ export default function ExerciceView({ exercice, eleve, onBack }) {
       </div>
 
       {/* Barre d'action fixe en bas */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", borderTop: "1px solid #e2e8f0", padding: "14px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 50 }}>
+      <div className="ev-bar" style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", borderTop: "1px solid #e2e8f0", padding: "14px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 50 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
             {answered === questions.length ? "✅ Tout complété !" : `${answered} / ${questions.length} réponses`}

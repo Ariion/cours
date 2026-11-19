@@ -23,11 +23,13 @@ export default function Login({ onLogin }) {
     <div style={{
       minHeight: "100vh", background: "#f8faff",
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "'Instrument Serif', Georgia, serif"
+      fontFamily: "'Instrument Serif', Georgia, serif",
+      padding: "24px 16px", boxSizing: "border-box"
     }}>
       <div style={{
         background: "#fff", border: "1px solid #e0e8f7",
-        borderRadius: 16, padding: "48px 40px", width: 380,
+        borderRadius: 16, padding: "48px 40px", width: "100%", maxWidth: 380,
+        boxSizing: "border-box",
         boxShadow: "0 4px 32px rgba(30,80,200,0.07)"
       }}>
         {/* Logo */}
