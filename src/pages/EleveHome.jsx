@@ -6,15 +6,28 @@ import { supabase } from "../lib/supabase";
 import CoursView from "../components/CoursView";
 import ExerciceView from "../components/ExerciceView";
 
-// ── Thèmes 3e ──────────────────────────────────────────────────────────────────
+// ── Thèmes par niveau ──────────────────────────────────────────────────────────
+// Un cours/exercice dont le chapitre n'est dans aucune liste ci-dessous n'est
+// pas perdu : loadAll() le range dans un thème "Autres chapitres" généré à la
+// volée, pour qu'un niveau sans thématisation définie affiche quand même tout
+// son contenu publié au lieu de l'escamoter.
 const THEMES = {
-  "Mathématiques": [
-    { id: "nombres",   label: "Nombres & Calculs",  icon: "✦", hue: "22",  chapitres: ["Calcul numérique — puissances et racines", "Notation scientifique", "Développement et factorisation avancés"] },
-    { id: "algebre",   label: "Algèbre",             icon: "◈", hue: "234", chapitres: ["Équations et inéquations"] },
-    { id: "fonctions", label: "Fonctions",            icon: "⌁", hue: "195", chapitres: ["Fonctions linéaires et affines"] },
-    { id: "geometrie", label: "Géométrie",            icon: "△", hue: "155", chapitres: ["Théorème de Pythagore — réciproque", "Trigonométrie avancée", "Géométrie dans l'espace"] },
-    { id: "donnees",   label: "Données & Hasard",     icon: "◎", hue: "340", chapitres: ["Statistiques — boîte à moustaches", "Probabilités — loi des grands nombres"] },
-  ]
+  "3e": {
+    "Mathématiques": [
+      { id: "nombres",   label: "Nombres & Calculs",  icon: "✦", hue: "22",  chapitres: ["Calcul numérique — puissances et racines", "Notation scientifique", "Développement et factorisation avancés"] },
+      { id: "algebre",   label: "Algèbre",             icon: "◈", hue: "234", chapitres: ["Équations et inéquations"] },
+      { id: "fonctions", label: "Fonctions",            icon: "⌁", hue: "195", chapitres: ["Fonctions linéaires et affines"] },
+      { id: "geometrie", label: "Géométrie",            icon: "△", hue: "155", chapitres: ["Théorème de Pythagore — réciproque", "Trigonométrie avancée", "Géométrie dans l'espace"] },
+      { id: "donnees",   label: "Données & Hasard",     icon: "◎", hue: "340", chapitres: ["Statistiques — boîte à moustaches", "Probabilités — loi des grands nombres"] },
+    ]
+  },
+  "2nde": {
+    "Mathématiques": [
+      { id: "nombres",   label: "Nombres & Intervalles", icon: "✦", hue: "22",  chapitres: ["Intervalles et ensembles de nombres", "Valeur absolue et distance"] },
+      { id: "algebre",   label: "Inéquations",            icon: "◈", hue: "234", chapitres: ["Inéquations du premier degré"] },
+      { id: "geometrie", label: "Vecteurs",               icon: "△", hue: "155", chapitres: ["Vecteurs dans le plan"] },
+    ]
+  }
 };
 
 // ── Annales (inline data) ──────────────────────────────────────────────────────
@@ -215,11 +228,21 @@ export default function EleveHome({ user, eleveData, onLogout }) {
   if (selected?.type === "exo")   return <ExerciceView exercice={selected.data} eleve={{ ...eleveData, id: user.id, email: user.email }} onBack={() => { setSelected(null); loadAll(); }} />;
   if (selected?.type === "annales") return <AnnalesView eleve={{ ...eleveData, id: user.id, email: user.email }} onBack={() => setSelected(null)} />;
 
-  const themes = THEMES["Mathématiques"];
+  const themes = THEMES[niveau]?.["Mathématiques"] || [];
   const filteredCours = cours.filter(c => !search || c.titre.toLowerCase().includes(search.toLowerCase()));
   const filteredExos  = exercices.filter(e => !search || e.titre.toLowerCase().includes(search.toLowerCase()));
-  const coursByTheme  = themes.map(t => ({ ...t, items: filteredCours.filter(c => t.chapitres.some(ch => c.chapitre === ch || c.titre === ch)) })).filter(t => t.items.length > 0);
-  const exosByTheme   = themes.map(t => ({ ...t, items: filteredExos.filter(e => t.chapitres.some(ch => e.chapitre === ch || e.titre === ch)) })).filter(t => t.items.length > 0);
+
+  // Range les items dans leur thème, puis regroupe ce qu'aucun thème ne
+  // revendique dans "Autres chapitres" plutôt que de le faire disparaître.
+  const grouper = (items) => {
+    const byTheme = themes.map(t => ({ ...t, items: items.filter(i => t.chapitres.some(ch => i.chapitre === ch || i.titre === ch)) })).filter(t => t.items.length > 0);
+    const rangés = new Set(byTheme.flatMap(t => t.items.map(i => i.id)));
+    const autres = items.filter(i => !rangés.has(i.id));
+    if (autres.length) byTheme.push({ id: "autres", label: "Autres chapitres", icon: "✦", hue: "210", items: autres });
+    return byTheme;
+  };
+  const coursByTheme  = grouper(filteredCours);
+  const exosByTheme   = grouper(filteredExos);
   const currentThemes = tab === "cours" ? coursByTheme : exosByTheme;
 
   return (

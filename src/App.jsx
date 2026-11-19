@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Admin from "./pages/Admin";
 import EleveHome from "./pages/EleveHome";
 import CoursEditor from "./pages/CoursEditor";
+import ElevePreview from "./pages/ElevePreview";
 
 // Email admin — à changer avec le tien
 const ADMIN_EMAIL = "anthony.armand07@gmail.com";
@@ -12,8 +13,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [eleveData, setEleveData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [adminView, setAdminView] = useState("dashboard"); // dashboard | editor
+  const [adminView, setAdminView] = useState("dashboard"); // dashboard | editor | preview
   const [coursAEditer, setCoursAEditer] = useState(null);
+  const [previewNiveau, setPreviewNiveau] = useState("2nde");
 
   useEffect(() => {
     // Récupérer la session actuelle
@@ -81,13 +83,22 @@ export default function App() {
   if (user.email === ADMIN_EMAIL) {
     if (adminView === "editor") {
       return (
-        <CoursEditor 
-          user={user} 
+        <CoursEditor
+          user={user}
           coursExistant={coursAEditer} /* On passe les données du cours à l'éditeur */
           onBack={() => {
             setAdminView("dashboard");
             setCoursAEditer(null); /* On vide la mémoire en quittant l'éditeur */
-          }} 
+          }}
+        />
+      );
+    }
+    if (adminView === "preview") {
+      return (
+        <ElevePreview
+          user={user}
+          niveauInitial={previewNiveau}
+          onBack={() => setAdminView("dashboard")}
         />
       );
     }
@@ -98,6 +109,10 @@ export default function App() {
         onOpenEditor={(cours) => {
           setCoursAEditer(cours || null); /* On mémorise le cours (ou null si nouveau) */
           setAdminView("editor");
+        }}
+        onOpenPreview={(niveau) => {
+          setPreviewNiveau(niveau || "2nde");
+          setAdminView("preview");
         }}
       />
     );
