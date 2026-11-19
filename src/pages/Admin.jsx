@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { CorrectionPanel } from "../components/CorrectionPanel";
-import AdminEnvois from "../components/AdminEnvois";
 import Messagerie from "../components/Messagerie";
 
 const MATIERES = ["Mathématiques", "Physique-Chimie", "Français", "Histoire-Géo", "Anglais"];
@@ -230,7 +229,6 @@ export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
     { key: "cours",       label: "Cours",           icon: "📖" },
     { key: "ajouter",     label: "+ Nouvel élève",  icon: "➕" },
     { key: "corrections", label: "Corrections",     icon: "✅" },
-    { key: "envois",      label: "Envois",          icon: "📸" },
     { key: "messages",    label: "Messages",        icon: "💬", badge: totalUnread || null },
   ];
 
@@ -424,15 +422,6 @@ export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
 
         {/* CORRECTIONS */}
         {tab === "corrections" && <CorrectionPanel />}
-
-        {/* ENVOIS */}
-        {tab === "envois" && (
-          <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1a2040", marginBottom: 6 }}>Photos envoyées</h1>
-            <p style={{ color: "#6b7eb8", fontSize: 14, marginBottom: 28 }}>Exercices faits, incompris, ou ce que tu as demandé.</p>
-            <AdminEnvois onReply={(eleveId, eleveNom) => { setOpenThread({ eleve_id: eleveId, eleve_nom: eleveNom }); setTab("messages"); }} />
-          </div>
-        )}
 
         {/* MESSAGES */}
         {tab === "messages" && (
