@@ -12,7 +12,7 @@ function DiffBadge({ n }) {
     null,
     { label: "Facile",        color: "#15803d", bg: "#f0fdf4", border: "#86efac" },
     { label: "Intermédiaire", color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
-    { label: "Type Brevet",   color: "#b91c1c", bg: "#fff5f5", border: "#fecaca" },
+    { label: "Difficile",     color: "#b91c1c", bg: "#fff5f5", border: "#fecaca" },
   ];
   const c = cfg[n] || cfg[1];
   return (

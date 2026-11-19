@@ -31,8 +31,10 @@ const THEMES = {
   }
 };
 
-// ── Annales (inline data) ──────────────────────────────────────────────────────
-const ANNALES = [
+// ── Annales (inline data) — par niveau : le contenu d'un niveau ne regarde pas
+// un autre (un 2nde n'a pas de Brevet à réviser, un 3e n'a pas de vecteurs).
+const ANNALES = {
+"3e": [
   {
     id: "brevet2023", annee: "2023", session: "Juin", type: "Brevet national", duree: "2h",
     exercices: [
@@ -67,14 +69,37 @@ const ANNALES = [
       ]},
     ]
   }
-];
+],
+"2nde": [
+  {
+    id: "commun2026", annee: "2026", session: "Contrôle commun", type: "Entraînement seconde", duree: "1h",
+    exercices: [
+      { id: "c26e1", titre: "Exercice 1 — Intervalles et valeur absolue (20 pts)", questions: [
+        { id: "c26e1q1", type: "calcul", difficulte: 1, enonce: "Écris $2 \\leq x < 7$ à l'aide d'un intervalle.", indices: ["Un crochet tourné vers le nombre l'inclut, tourné vers l'extérieur l'exclut."] },
+        { id: "c26e1q2", type: "calcul", difficulte: 2, enonce: "Résous $|x - 2| = 5$.", indices: ["Les solutions sont les deux nombres à distance 5 de 2."] },
+        { id: "c26e1q3", type: "redaction", difficulte: 2, enonce: "Résous $|x + 3| \\leq 4$ et donne la solution sous forme d'intervalle.", indices: ["Récris $x+3$ en $x-(-3)$ pour repérer le centre de l'intervalle : c'est $-3$."] },
+      ]},
+      { id: "c26e2", titre: "Exercice 2 — Inéquations (20 pts)", questions: [
+        { id: "c26e2q1", type: "calcul", difficulte: 1, enonce: "Résous $-4x + 3 < 11$.", indices: ["Isole d'abord $-4x$, puis divise par $-4$ : attention au sens de l'inégalité."] },
+        { id: "c26e2q2", type: "redaction", difficulte: 3, enonce: "Résous $4(x - 2) < 3x + 5$ et vérifie ta solution avec une valeur test.", indices: ["Développe d'abord le membre de gauche.", "Regroupe les $x$ d'un côté, les nombres de l'autre."] },
+      ]},
+      { id: "c26e3", titre: "Exercice 3 — Vecteurs (25 pts)", questions: [
+        { id: "c26e3q1", type: "calcul", difficulte: 1, enonce: "A(1 ; 2) et B(4 ; 6). Donne les coordonnées de $\\overrightarrow{AB}$.", indices: ["Arrivée moins départ : (x_B − x_A ; y_B − y_A)."] },
+        { id: "c26e3q2", type: "calcul", difficulte: 2, enonce: "Calcule la norme du vecteur de coordonnées (3 ; 4).", indices: ["$\\sqrt{x^2+y^2}$, avec $x=3$ et $y=4$."] },
+        { id: "c26e3q3", type: "redaction", difficulte: 3, enonce: "A(−2 ; −1), B(2 ; −3), C(−4 ; 4), D(6 ; −1). Les droites (AB) et (CD) sont-elles parallèles ? Justifie à l'aide d'un déterminant.", indices: ["Calcule d'abord les coordonnées de $\\overrightarrow{AB}$ et $\\overrightarrow{CD}$.", "det(u, v) = xy′ − x′y ; nul si et seulement si les vecteurs sont colinéaires."] },
+      ]},
+    ]
+  }
+]
+};
 
 // ── Annales view ───────────────────────────────────────────────────────────────
-function AnnalesView({ eleve, onBack }) {
+function AnnalesView({ eleve, niveau, onBack }) {
   const [selected, setSelected] = useState(null);
   const [reponses, setReponses] = useState({});
   const [submitted, setSubmitted] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const annalesNiveau = ANNALES[niveau] || [];
 
   // Si une annale/exo est sélectionné, utilise ExerciceView
   if (selected) {
@@ -100,16 +125,16 @@ function AnnalesView({ eleve, onBack }) {
 
       <div style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(10px)", borderBottom: "1px solid #f1f5f9", padding: "13px 36px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 50 }}>
         <button onClick={onBack} style={{ fontSize: 13, color: "#64748b", background: "#f1f5f9", border: "none", borderRadius: 8, padding: "7px 16px", cursor: "pointer", fontWeight: 600 }}>← Retour</button>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#b91c1c" }}>🎓 Annales & Brevets blancs</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "#b91c1c" }}>🎓 Annales — {niveau}</span>
       </div>
 
       <div style={{ maxWidth: 880, margin: "0 auto", padding: "48px 32px 80px" }}>
         <div style={{ marginBottom: 40 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 700, color: "#0f172a", margin: "0 0 10px", fontFamily: "'Source Serif 4', Georgia, serif" }}>Annales & Brevets blancs</h1>
-          <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>Entraîne-toi avec de vrais sujets. Chaque exercice est envoyé à ton professeur pour correction.</p>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: "#0f172a", margin: "0 0 10px", fontFamily: "'Source Serif 4', Georgia, serif" }}>Annales — {niveau}</h1>
+          <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>Entraîne-toi avec des sujets qui couvrent tous les chapitres de l'année. Chaque exercice est envoyé à ton professeur pour correction.</p>
         </div>
 
-        {ANNALES.map((annale) => (
+        {annalesNiveau.map((annale) => (
           <div key={annale.id} style={{ marginBottom: 44 }}>
             {/* Header annale */}
             <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "18px 24px", background: annale.type === "Brevet national" ? "linear-gradient(135deg,#fff5f5,#fee2e2)" : "linear-gradient(135deg,#eff6ff,#dbeafe)", borderRadius: 14, border: `1px solid ${annale.type === "Brevet national" ? "#fca5a5" : "#93c5fd"}`, marginBottom: 16 }}>
@@ -146,6 +171,13 @@ function AnnalesView({ eleve, onBack }) {
             </div>
           </div>
         ))}
+        {annalesNiveau.length === 0 && (
+          <div style={{ textAlign: "center", padding: "70px 40px", background: "#fff", borderRadius: 16, border: "2px dashed #e2e8f0" }}>
+            <div style={{ fontSize: 44, marginBottom: 14 }}>🎓</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Pas encore d'annales pour {niveau}</div>
+            <div style={{ fontSize: 13, color: "#94a3b8" }}>Elles arrivent au fur et à mesure que le programme avance.</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -235,7 +267,7 @@ export default function EleveHome({ user, eleveData, onLogout }) {
 
   if (selected?.type === "cours") return <CoursView cours={selected.data} onBack={() => setSelected(null)} />;
   if (selected?.type === "exo")   return <ExerciceView exercice={selected.data} eleve={{ ...eleveData, id: user.id, email: user.email }} onBack={() => { setSelected(null); loadAll(); }} />;
-  if (selected?.type === "annales") return <AnnalesView eleve={{ ...eleveData, id: user.id, email: user.email }} onBack={() => setSelected(null)} />;
+  if (selected?.type === "annales") return <AnnalesView eleve={{ ...eleveData, id: user.id, email: user.email }} niveau={niveau} onBack={() => setSelected(null)} />;
 
   const themes = THEMES[niveau]?.["Mathématiques"] || [];
   const filteredCours = cours.filter(c => !search || c.titre.toLowerCase().includes(search.toLowerCase()));
@@ -298,10 +330,12 @@ export default function EleveHome({ user, eleveData, onLogout }) {
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <span style={{ background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600 }}>📖 {cours.length} cours</span>
               <span style={{ background: "rgba(255,255,255,0.15)", color: "#fff", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600 }}>✏️ {exercices.length} exercices</span>
-              <button onClick={() => setSelected({ type: "annales" })}
-                style={{ background: "linear-gradient(135deg,rgba(185,28,28,0.85),rgba(220,38,38,0.85))", color: "#fff", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "7px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                🎓 Annales Brevet
-              </button>
+              {(ANNALES[niveau] || []).length > 0 && (
+                <button onClick={() => setSelected({ type: "annales" })}
+                  style={{ background: "linear-gradient(135deg,rgba(185,28,28,0.85),rgba(220,38,38,0.85))", color: "#fff", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 8, padding: "7px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  🎓 Annales
+                </button>
+              )}
             </div>
           </div>
         </div>
