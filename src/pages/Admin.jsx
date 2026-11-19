@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { CorrectionPanel } from "../components/CorrectionPanel";
+import AdminEnvois from "../components/AdminEnvois";
+import Messagerie from "../components/Messagerie";
 
 const MATIERES = ["Mathématiques", "Physique-Chimie", "Français", "Histoire-Géo", "Anglais"];
 const NIVEAUX = ["6e", "5e", "4e", "3e", "2nde", "1re", "Terminale"];
@@ -163,7 +165,11 @@ export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
   const [creating, setCreating] = useState(false);
   const [msg, setMsg] = useState("");
 
+  const [messageThreads, setMessageThreads] = useState([]); // [{eleve_id, eleve_nom, unread}]
+  const [openThread, setOpenThread] = useState(null); // {eleve_id, eleve_nom}
+
   useEffect(() => { loadData(); }, []);
+  useEffect(() => { if (tab === "messages") loadThreads(); }, [tab]);
 
   const loadData = async () => {
     setLoading(true);
@@ -174,16 +180,35 @@ export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
     setLoading(false);
   };
 
+  const loadThreads = async () => {
+    const { data: msgs } = await supabase.from("messages").select("eleve_id, eleve_nom, expediteur, lu").order("created_at", { ascending: true });
+    const byEleve = {};
+    (msgs || []).forEach(m => {
+      const t = byEleve[m.eleve_id] || { eleve_id: m.eleve_id, eleve_nom: m.eleve_nom || "Élève", unread: 0 };
+      t.eleve_nom = m.eleve_nom || t.eleve_nom;
+      if (m.expediteur === "eleve" && !m.lu) t.unread += 1;
+      byEleve[m.eleve_id] = t;
+    });
+    // Ajoute les élèves inscrits qui n'ont encore aucun message, pour pouvoir leur écrire en premier.
+    eleves.forEach(e => {
+      if (e.auth_id && !byEleve[e.auth_id]) {
+        byEleve[e.auth_id] = { eleve_id: e.auth_id, eleve_nom: e.nom, unread: 0 };
+      }
+    });
+    setMessageThreads(Object.values(byEleve).sort((a, b) => b.unread - a.unread));
+  };
+
   const creerEleve = async () => {
     if (!newEmail || !newNom) return;
     setCreating(true);
     setMsg("");
     const tempPassword = Math.random().toString(36).slice(-6).toUpperCase() + "m1!";
-    await supabase.auth.signUp({ email: newEmail, password: tempPassword });
+    const { data: signUpData } = await supabase.auth.signUp({ email: newEmail, password: tempPassword });
     const { error } = await supabase.from("eleves").insert({
       email: newEmail, nom: newNom, niveau: newNiveau,
       matieres: newMatieres, actif: true, mot_de_passe_temp: tempPassword,
-      chapitres_debloques: null // tout débloqué par défaut
+      chapitres_debloques: null, // tout débloqué par défaut
+      auth_id: signUpData?.user?.id || null
     });
     if (!error) {
       setMsg(`✓ Élève créé !\nEmail : ${newEmail}\nMot de passe : ${tempPassword}`);
@@ -199,11 +224,14 @@ export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
   const toggleEleveActif = async (id, actif) => { await supabase.from("eleves").update({ actif: !actif }).eq("id", id); loadData(); };
   const supprimerCours = async (id) => { if (!confirm("Supprimer ce cours ?")) return; await supabase.from("cours").delete().eq("id", id); loadData(); };
 
+  const totalUnread = messageThreads.reduce((n, t) => n + t.unread, 0);
   const sideNav = [
     { key: "eleves",      label: "Élèves",         icon: "👤" },
     { key: "cours",       label: "Cours",           icon: "📖" },
     { key: "ajouter",     label: "+ Nouvel élève",  icon: "➕" },
     { key: "corrections", label: "Corrections",     icon: "✅" },
+    { key: "envois",      label: "Envois",          icon: "📸" },
+    { key: "messages",    label: "Messages",        icon: "💬", badge: totalUnread || null },
   ];
 
   // Groupe les cours par niveau, dans l'ordre scolaire, pour un rangement propre.
@@ -214,7 +242,19 @@ export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
   if (autresNiveaux.length) coursParNiveau.push({ niveau: "Autre", items: autresNiveaux });
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', Arial, sans-serif", background: "#f0f5ff" }}>
+    <div className="adm-shell" style={{ display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', Arial, sans-serif", background: "#f0f5ff" }}>
+      <style>{`
+        @media (max-width: 820px) {
+          .adm-shell { flex-direction: column !important; }
+          .adm-sidebar { width: 100% !important; flex-direction: row !important; flex-wrap: wrap; align-items: center; padding: 10px 12px !important; gap: 8px; }
+          .adm-sidebar .adm-brand { display: none !important; }
+          .adm-nav { display: flex !important; flex: 1 1 auto; padding: 0 !important; overflow-x: auto; gap: 4px; }
+          .adm-nav > div { margin-bottom: 0 !important; white-space: nowrap; flex-shrink: 0; }
+          .adm-sidebar-actions { padding: 0 !important; display: flex !important; gap: 6px; flex-shrink: 0; }
+          .adm-sidebar-actions > div { margin-bottom: 0 !important; width: auto !important; padding: 8px 12px !important; font-size: 12px !important; }
+          .adm-content { padding: 20px 16px !important; }
+        }
+      `}</style>
       {/* Modal déblocage */}
       {deblocageEleve && (
         <DeblocagePanel
@@ -225,19 +265,20 @@ export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
       )}
 
       {/* Sidebar */}
-      <div style={{ width: 220, background: "#fff", borderRight: "1px solid #e0e8f7", display: "flex", flexDirection: "column", padding: "24px 0" }}>
-        <div style={{ padding: "0 20px 28px", borderBottom: "1px solid #e0e8f7" }}>
+      <div className="adm-sidebar" style={{ width: 220, background: "#fff", borderRight: "1px solid #e0e8f7", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0 }}>
+        <div className="adm-brand" style={{ padding: "0 20px 28px", borderBottom: "1px solid #e0e8f7" }}>
           <div style={{ fontSize: 18, fontWeight: 700, color: "#1a56db" }}>COURS</div>
           <div style={{ fontSize: 11, color: "#aab5cc", marginTop: 2 }}>Administration</div>
         </div>
-        <nav style={{ flex: 1, padding: "16px 12px" }}>
+        <nav className="adm-nav" style={{ flex: 1, padding: "16px 12px" }}>
           {sideNav.map(s => (
-            <div key={s.key} onClick={() => setTab(s.key)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", marginBottom: 4, background: tab === s.key ? "#eef3ff" : "transparent", color: tab === s.key ? "#1a56db" : "#555", fontWeight: tab === s.key ? 600 : 400, fontSize: 14, transition: "all 0.15s" }}>
+            <div key={s.key} onClick={() => setTab(s.key)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, cursor: "pointer", marginBottom: 4, background: tab === s.key ? "#eef3ff" : "transparent", color: tab === s.key ? "#1a56db" : "#555", fontWeight: tab === s.key ? 600 : 400, fontSize: 14, transition: "all 0.15s" }}>
               <span style={{ fontSize: 16 }}>{s.icon}</span>{s.label}
+              {s.badge ? <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "#dc2626", borderRadius: 20, padding: "1px 7px", marginLeft: 2 }}>{s.badge}</span> : null}
             </div>
           ))}
         </nav>
-        <div style={{ padding: "0 12px 16px" }}>
+        <div className="adm-sidebar-actions" style={{ padding: "0 12px 16px" }}>
           <div onClick={onOpenEditor} style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 12px", borderRadius: 10, cursor: "pointer", background: "#1a56db", color: "#fff", fontSize: 14, fontWeight: 600, marginBottom: 8, justifyContent: "center" }}>
             ✏️ Rédiger un cours
           </div>
@@ -251,7 +292,7 @@ export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
       </div>
 
       {/* Contenu */}
-      <div style={{ flex: 1, padding: "32px 40px", overflowY: "auto" }}>
+      <div className="adm-content" style={{ flex: 1, padding: "32px 40px", overflowY: "auto", minWidth: 0 }}>
 
         {/* ÉLÈVES */}
         {tab === "eleves" && (
@@ -383,6 +424,49 @@ export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
 
         {/* CORRECTIONS */}
         {tab === "corrections" && <CorrectionPanel />}
+
+        {/* ENVOIS */}
+        {tab === "envois" && (
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1a2040", marginBottom: 6 }}>Photos envoyées</h1>
+            <p style={{ color: "#6b7eb8", fontSize: 14, marginBottom: 28 }}>Exercices faits, incompris, ou ce que tu as demandé.</p>
+            <AdminEnvois onReply={(eleveId, eleveNom) => { setOpenThread({ eleve_id: eleveId, eleve_nom: eleveNom }); setTab("messages"); }} />
+          </div>
+        )}
+
+        {/* MESSAGES */}
+        {tab === "messages" && (
+          <div style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column" }}>
+            {openThread ? (
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, background: "#fff", border: "1px solid #e0e8f7", borderRadius: 16, overflow: "hidden" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "1px solid #e2e8f0" }}>
+                  <button onClick={() => { setOpenThread(null); loadThreads(); }} style={{ fontSize: 13, color: "#64748b", background: "#f1f5f9", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontWeight: 600 }}>← Tous les messages</button>
+                </div>
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <Messagerie eleveId={openThread.eleve_id} eleveNom={openThread.eleve_nom} asAdmin={true} titre={openThread.eleve_nom} />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1a2040", marginBottom: 6 }}>Messages</h1>
+                <p style={{ color: "#6b7eb8", fontSize: 14, marginBottom: 28 }}>{messageThreads.length} conversation{messageThreads.length > 1 ? "s" : ""}</p>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {messageThreads.map(t => (
+                    <div key={t.eleve_id} onClick={() => setOpenThread(t)} style={{ background: "#fff", border: "1px solid #e0e8f7", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                      <span style={{ fontWeight: 600, color: "#1a2040" }}>{t.eleve_nom}</span>
+                      {t.unread > 0
+                        ? <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "#dc2626", borderRadius: 20, padding: "3px 10px" }}>{t.unread} nouveau{t.unread > 1 ? "x" : ""}</span>
+                        : <span style={{ fontSize: 12, color: "#94a3b8" }}>→</span>}
+                    </div>
+                  ))}
+                  {messageThreads.length === 0 && (
+                    <div style={{ textAlign: "center", color: "#aab5cc", padding: 48 }}>Aucun élève avec un compte lié pour l'instant.</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

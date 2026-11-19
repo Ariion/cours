@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import CoursView from "../components/CoursView";
 import ExerciceView from "../components/ExerciceView";
+import EnvoiPhoto from "../components/EnvoiPhoto";
+import Messagerie from "../components/Messagerie";
 
 // ── Thèmes par niveau ──────────────────────────────────────────────────────────
 // Un cours/exercice dont le chapitre n'est dans aucune liste ci-dessous n'est
@@ -202,10 +204,18 @@ export default function EleveHome({ user, eleveData, onLogout }) {
   const [tab, setTab] = useState("cours");
   const [search, setSearch] = useState("");
   const [themeOpen, setThemeOpen] = useState({});
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
 
   const niveau = eleveData?.niveau || "3e";
+  const eleveNom = eleveData?.nom || user.email;
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(); loadUnread(); }, []);
+
+  const loadUnread = async () => {
+    const { count } = await supabase.from("messages").select("id", { count: "exact", head: true })
+      .eq("eleve_id", user.id).eq("expediteur", "admin").eq("lu", false);
+    setUnreadMsgs(count || 0);
+  };
 
   const loadAll = async () => {
     const [{ data: c }, { data: e }, { data: s }] = await Promise.all([
@@ -247,11 +257,17 @@ export default function EleveHome({ user, eleveData, onLogout }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8f9ff", fontFamily: "DM Sans, sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}*{box-sizing:border-box}`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}*{box-sizing:border-box}
+        @media (max-width: 560px) {
+          .eh-pad { padding-left: 16px !important; padding-right: 16px !important; }
+          .eh-hero { padding: 32px 16px 36px !important; }
+          .eh-tabs { gap: 4px !important; }
+        }
+      `}</style>
 
       {/* Header */}
       <div style={{ background: "#fff", borderBottom: "1px solid #f1f5f9", position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 32px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="eh-pad" style={{ maxWidth: 1000, margin: "0 auto", padding: "0 32px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 30, height: 30, background: "#1d4ed8", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 14 }}>C</div>
             <span style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", fontFamily: "'Source Serif 4', Georgia, serif" }}>Cours</span>
@@ -293,20 +309,38 @@ export default function EleveHome({ user, eleveData, onLogout }) {
       </div>
 
       {/* Tabs */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #f1f5f9" }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 32px", display: "flex" }}>
-          {[{ key: "cours", label: "📖 Cours", count: cours.length },{ key: "exercices", label: "✏️ Exercices", count: exercices.length }].map(t => (
-            <div key={t.key} onClick={() => setTab(t.key)}
-              style={{ padding: "14px 22px 12px", cursor: "pointer", fontSize: 14, fontWeight: tab === t.key ? 700 : 500, borderBottom: `3px solid ${tab === t.key ? "#1d4ed8" : "transparent"}`, color: tab === t.key ? "#1d4ed8" : "#94a3b8", transition: "all 0.15s", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ background: "#fff", borderBottom: "1px solid #f1f5f9", overflowX: "auto" }}>
+        <div className="eh-pad eh-tabs" style={{ maxWidth: 1000, margin: "0 auto", padding: "0 32px", display: "flex" }}>
+          {[
+            { key: "cours", label: "📖 Cours", count: cours.length },
+            { key: "exercices", label: "✏️ Exercices", count: exercices.length },
+            { key: "envoyer", label: "📸 Envoyer", count: null },
+            { key: "messages", label: "💬 Messages", count: unreadMsgs || null, alert: unreadMsgs > 0 },
+          ].map(t => (
+            <div key={t.key} onClick={() => { setTab(t.key); if (t.key === "messages") setUnreadMsgs(0); }}
+              style={{ padding: "14px 18px 12px", cursor: "pointer", fontSize: 14, fontWeight: tab === t.key ? 700 : 500, borderBottom: `3px solid ${tab === t.key ? "#1d4ed8" : "transparent"}`, color: tab === t.key ? "#1d4ed8" : "#94a3b8", transition: "all 0.15s", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap", flexShrink: 0 }}>
               {t.label}
-              <span style={{ fontSize: 11, background: tab === t.key ? "#dbeafe" : "#f1f5f9", color: tab === t.key ? "#1d4ed8" : "#94a3b8", borderRadius: 20, padding: "2px 8px", fontWeight: 700 }}>{t.count}</span>
+              {t.count !== null && (
+                <span style={{ fontSize: 11, background: t.alert ? "#fee2e2" : tab === t.key ? "#dbeafe" : "#f1f5f9", color: t.alert ? "#b91c1c" : tab === t.key ? "#1d4ed8" : "#94a3b8", borderRadius: 20, padding: "2px 8px", fontWeight: 700 }}>{t.count}</span>
+              )}
             </div>
           ))}
         </div>
       </div>
 
       {/* Contenu */}
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 32px 80px" }}>
+      {tab === "envoyer" ? (
+        <div className="eh-pad" style={{ maxWidth: 1000, margin: "0 auto", padding: "28px 32px 80px" }}>
+          <EnvoiPhoto eleve={{ id: user.id, nom: eleveNom, email: user.email }} />
+        </div>
+      ) : tab === "messages" ? (
+        <div className="eh-pad" style={{ maxWidth: 700, margin: "0 auto", padding: "28px 32px 80px" }}>
+          <div style={{ background: "#fff", border: "1px solid #e0e8f7", borderRadius: 16, height: "65vh", minHeight: 420, overflow: "hidden" }}>
+            <Messagerie eleveId={user.id} eleveNom={eleveNom} asAdmin={false} />
+          </div>
+        </div>
+      ) : (
+      <div className="eh-pad" style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 32px 80px" }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: 80, color: "#94a3b8" }}>Chargement…</div>
         ) : currentThemes.length === 0 ? (
@@ -345,6 +379,7 @@ export default function EleveHome({ user, eleveData, onLogout }) {
           ))
         )}
       </div>
+      )}
     </div>
   );
 }

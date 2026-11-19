@@ -338,32 +338,39 @@ export default function CoursView({ cours, onBack }) {
         * { box-sizing: border-box; }
         @keyframes fadeIn { from { opacity:0; transform:translateY(8px)} to {opacity:1;transform:translateY(0)} }
         .section-block { animation: fadeIn 0.4s ease both; }
+        @media (max-width: 860px) {
+          .cv-aside { display: none !important; }
+          .cv-main { padding: 26px 18px 90px !important; }
+          .cv-nav { padding: 10px 16px !important; }
+          .cv-breadcrumb { display: none !important; }
+          .cv-main h1 { font-size: 26px !important; }
+        }
       `}</style>
 
       {/* Nav */}
-      <div style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(10px)", borderBottom: "1px solid #f1f5f9", padding: "12px 32px", display: "flex", alignItems: "center", gap: 16 }}>
-        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#64748b", background: "#f1f5f9", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontWeight: 600, fontFamily: "DM Sans, sans-serif" }}>
+      <div className="cv-nav" style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(10px)", borderBottom: "1px solid #f1f5f9", padding: "12px 32px", display: "flex", alignItems: "center", gap: 16 }}>
+        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#64748b", background: "#f1f5f9", border: "none", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontWeight: 600, fontFamily: "DM Sans, sans-serif", flexShrink: 0 }}>
           ← Retour
         </button>
         <div style={{ height: 20, width: 1, background: "#e2e8f0" }} />
         {/* Fil d'Ariane */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#94a3b8", fontFamily: "DM Sans, sans-serif" }}>
+        <div className="cv-breadcrumb" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#94a3b8", fontFamily: "DM Sans, sans-serif", minWidth: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
           <span>Mathématiques</span>
           <span>›</span>
           <span>{cours.niveau}</span>
           <span>›</span>
           <span style={{ color: "#374151", fontWeight: 600 }}>{cours.titre}</span>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexShrink: 0 }}>
           <span style={{ fontSize: 11, background: "#eff6ff", color: "#2563eb", padding: "3px 10px", borderRadius: 20, fontWeight: 700, fontFamily: "DM Sans, sans-serif" }}>{cours.matiere}</span>
           <span style={{ fontSize: 11, background: "#f1f5f9", color: "#64748b", padding: "3px 10px", borderRadius: 20, fontWeight: 600, fontFamily: "DM Sans, sans-serif" }}>{cours.niveau}</span>
         </div>
       </div>
 
-      <div style={{ display: "flex", maxWidth: 1200, margin: "0 auto" }}>
+      <div className="cv-wrap" style={{ display: "flex", maxWidth: 1200, margin: "0 auto" }}>
 
         {/* ── Contenu principal ─────────────────────────────────────────── */}
-        <main style={{ flex: 1, padding: "48px 56px 100px 56px", minWidth: 0 }}>
+        <main className="cv-main" style={{ flex: 1, padding: "48px 56px 100px 56px", minWidth: 0 }}>
           {/* Header cours */}
           <div style={{ marginBottom: 40 }}>
             {cours.chapitre && cours.chapitre !== cours.titre && (
@@ -441,7 +448,7 @@ export default function CoursView({ cours, onBack }) {
 
         {/* ── Sommaire latéral (style Kartable) ──────────────────────────── */}
         {sommaire.length > 1 && (
-          <aside style={{ width: 260, flexShrink: 0, padding: "48px 0 48px 0" }}>
+          <aside className="cv-aside" style={{ width: 260, flexShrink: 0, padding: "48px 0 48px 0" }}>
             <div style={{ position: "sticky", top: 70, padding: "0 24px" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16, fontFamily: "DM Sans, sans-serif" }}>
                 Sommaire
