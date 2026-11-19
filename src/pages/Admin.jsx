@@ -149,7 +149,7 @@ function DeblocagePanel({ eleve, onClose, onSaved }) {
 }
 
 // ── Admin principal ────────────────────────────────────────────────────────────
-export default function Admin({ user, onLogout, onOpenEditor }) {
+export default function Admin({ user, onLogout, onOpenEditor, onOpenPreview }) {
   const [tab, setTab] = useState("eleves");
   const [eleves, setEleves] = useState([]);
   const [cours, setCours] = useState([]);
@@ -206,6 +206,13 @@ export default function Admin({ user, onLogout, onOpenEditor }) {
     { key: "corrections", label: "Corrections",     icon: "✅" },
   ];
 
+  // Groupe les cours par niveau, dans l'ordre scolaire, pour un rangement propre.
+  const coursParNiveau = NIVEAUX
+    .map(n => ({ niveau: n, items: cours.filter(c => c.niveau === n) }))
+    .filter(g => g.items.length > 0);
+  const autresNiveaux = cours.filter(c => !NIVEAUX.includes(c.niveau));
+  if (autresNiveaux.length) coursParNiveau.push({ niveau: "Autre", items: autresNiveaux });
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', Arial, sans-serif", background: "#f0f5ff" }}>
       {/* Modal déblocage */}
@@ -233,6 +240,9 @@ export default function Admin({ user, onLogout, onOpenEditor }) {
         <div style={{ padding: "0 12px 16px" }}>
           <div onClick={onOpenEditor} style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 12px", borderRadius: 10, cursor: "pointer", background: "#1a56db", color: "#fff", fontSize: 14, fontWeight: 600, marginBottom: 8, justifyContent: "center" }}>
             ✏️ Rédiger un cours
+          </div>
+          <div onClick={() => onOpenPreview?.()} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: "1.5px solid #c5d8f7", color: "#1a56db", fontSize: 13, fontWeight: 600, marginBottom: 8, justifyContent: "center" }}>
+            👁 Aperçu élève
           </div>
           <div onClick={onLogout} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, cursor: "pointer", color: "#d93025", fontSize: 13, fontWeight: 500 }}>
             ⬡ Déconnexion
@@ -300,23 +310,39 @@ export default function Admin({ user, onLogout, onOpenEditor }) {
         {tab === "cours" && (
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1a2040", marginBottom: 6 }}>Tous les cours</h1>
-            <p style={{ color: "#6b7eb8", fontSize: 14, marginBottom: 28 }}>{cours.length} cours</p>
-            <div style={{ display: "grid", gap: 12 }}>
-              {cours.map(c => (
-                <div key={c.id} style={{ background: "#fff", border: "1px solid #e0e8f7", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ fontWeight: 600, color: "#1a2040" }}>{c.titre}</div>
-                    <div style={{ fontSize: 13, color: "#6b7eb8", marginTop: 2 }}>{c.matiere} · {c.niveau} · {new Date(c.created_at).toLocaleDateString("fr-FR")}</div>
+            <p style={{ color: "#6b7eb8", fontSize: 14, marginBottom: 28 }}>{cours.length} cours, répartis par niveau</p>
+
+            {coursParNiveau.map(groupe => (
+              <div key={groupe.niveau} style={{ marginBottom: 32 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                    <h2 style={{ fontSize: 16, fontWeight: 700, color: "#1a56db", margin: 0 }}>{groupe.niveau}</h2>
+                    <span style={{ fontSize: 12, color: "#94a3b8" }}>{groupe.items.length} cours</span>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <span style={{ fontSize: 11, padding: "4px 12px", borderRadius: 20, background: c.publie ? "#f0fae8" : "#fff8e6", color: c.publie ? "#3a7d0a" : "#b86f00", fontWeight: 600 }}>{c.publie ? "Publié" : "Brouillon"}</span>
-                    <button onClick={() => onOpenEditor(c)} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #cce0ff", background: "#eef5ff", color: "#1a56db", fontSize: 12, cursor: "pointer" }}>Éditer</button>
-                    <button onClick={() => supprimerCours(c.id)} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #fdd", background: "#fff5f5", color: "#d93025", fontSize: 12, cursor: "pointer" }}>Supprimer</button>
-                  </div>
+                  {NIVEAUX.includes(groupe.niveau) && (
+                    <button onClick={() => onOpenPreview?.(groupe.niveau)} style={{ padding: "5px 12px", borderRadius: 8, border: "1px solid #c5d8f7", background: "#eef3ff", color: "#1a56db", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      👁 Aperçu élève · {groupe.niveau}
+                    </button>
+                  )}
                 </div>
-              ))}
-              {cours.length === 0 && !loading && <div style={{ textAlign: "center", color: "#aab5cc", padding: 48 }}>Aucun cours rédigé.</div>}
-            </div>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {groupe.items.map(c => (
+                    <div key={c.id} style={{ background: "#fff", border: "1px solid #e0e8f7", borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div>
+                        <div style={{ fontWeight: 600, color: "#1a2040" }}>{c.titre}</div>
+                        <div style={{ fontSize: 13, color: "#6b7eb8", marginTop: 2 }}>{c.matiere} · {c.chapitre || "—"} · {new Date(c.created_at).toLocaleDateString("fr-FR")}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                        <span style={{ fontSize: 11, padding: "4px 12px", borderRadius: 20, background: c.publie ? "#f0fae8" : "#fff8e6", color: c.publie ? "#3a7d0a" : "#b86f00", fontWeight: 600 }}>{c.publie ? "Publié" : "Brouillon"}</span>
+                        <button onClick={() => onOpenEditor(c)} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #cce0ff", background: "#eef5ff", color: "#1a56db", fontSize: 12, cursor: "pointer" }}>Éditer</button>
+                        <button onClick={() => supprimerCours(c.id)} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #fdd", background: "#fff5f5", color: "#d93025", fontSize: 12, cursor: "pointer" }}>Supprimer</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {cours.length === 0 && !loading && <div style={{ textAlign: "center", color: "#aab5cc", padding: 48 }}>Aucun cours rédigé.</div>}
           </div>
         )}
 
