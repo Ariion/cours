@@ -204,7 +204,7 @@ function CarteExo({ exo, onClick, soumis, hue }) {
   const [hov, setHov] = useState(false);
   const nb = (exo.questions || []).length;
   const maxDiff = Math.max(...(exo.questions || []).map(q => q.difficulte || 1));
-  const dc = [,{ label: "Facile", c: "#15803d", bg: "#f0fdf4" },{ label: "Intermédiaire", c: "#b45309", bg: "#fffbeb" },{ label: "Brevet", c: "#b91c1c", bg: "#fff5f5" }][maxDiff] || { label: "Facile", c: "#15803d", bg: "#f0fdf4" };
+  const dc = [,{ label: "Facile", c: "#15803d", bg: "#f0fdf4" },{ label: "Intermédiaire", c: "#b45309", bg: "#fffbeb" },{ label: "Difficile", c: "#b91c1c", bg: "#fff5f5" }][maxDiff] || { label: "Facile", c: "#15803d", bg: "#f0fdf4" };
 
   return (
     <div onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
